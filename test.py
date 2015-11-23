@@ -1,10 +1,21 @@
 import jenkins
 import xml.etree.ElementTree as ET
+import json
+
+# Load config from json file
+#	return json format config
+def load_config():
+	with open("config.json") as json_file:
+	    json_data = json.load(json_file)
+	return json_data
 
 # Connect to server
+#	param server_url: the url of the server, if port is specified, use the format as '8.8.8.8:8080'
+#	param username: the name of the user
+#	param password: the password of the user
 #	return server: return the connect server information.
-def connect_server():
-	server = jenkins.Jenkins('http://localhost:8080', username='myuser', password='mypassword')
+def connect_server(server_url, username, password):
+	server = jenkins.Jenkins(server_url, username, password)
 	return server
 
 
@@ -39,11 +50,11 @@ def get_a_view_jobs(connected_server, view_name):
 
 
 
-
-server = connect_server()
+config = load_config();
+server = connect_server(config['server_url'], config['username'], config['password'])
 all_view_names = get_all_view_names(server)
 print all_view_names
 print get_a_view_jobs(server, 'tab 1');
-job_info = server.get_job_config('iLife')
+#job_info = server.get_job_config('iLife')
 
-print job_info
+#print job_info
