@@ -2,13 +2,16 @@ import jenkins
 import xml.etree.ElementTree as ET
 import json
 import time
-from multiprocessing import Process, Lock
-
+import multiprocessing as mp
+import Queue
+import threading
+output = mp.Queue()
 # Load config from json file
 #	return json format config
+
 def load_config():
 	with open("config.json") as json_file:
-	    json_data = json.load(json_file)
+		json_data = json.load(json_file)
 	return json_data
 
 # Connect to server
@@ -50,13 +53,20 @@ def get_a_view_jobs(connected_server, view_name):
 def job_d(server, jobs):
 	for job in jobs:
 		each_job = server.get_job_info(job)
+		# return each_job
 		# print each_job['name']
 
-def job_dd(lock, job, server):
+def job_dd(job, server, output):
 	# lock.acquire()
 	each_job = server.get_job_info(job)
+	output.put(each_job['name'])
 	# print each_job['name']
+	# return each_job
 	# lock.release()
+
+
+
+
 
 
 
@@ -66,17 +76,30 @@ all_view_names = get_all_view_names(server)
 # print all_view_names
 jobs =  get_a_view_jobs(server, 'tab 1');
 
-start_time = time.time()
-job_d(server, jobs)
-print("--- %s seconds ---" % (time.time() - start_time))
 
-start_time = time.time()
-lock = Lock()
-for job in jobs:
-	Process(target=job_dd, args=(lock, job, server)).start()
 
-print("--- %s seconds ---" % (time.time() - start_time))
+# start_time = time.time()
+# job_d(server, jobs)
+# print("--- %s seconds ---" % (time.time() - start_time))
 
-#job_info = server.get_job_config('iLife')
+# start_time = time.time()
+# for job in jobs:
+# 	Process(target=job_dd, args=(job, server)).start()
 
-#print job_info
+# print("--- %s seconds ---" % (time.time() - start_time))
+
+
+processes = [mp.Process(target=job_dd, args=(job, server, output)) for job in jobs]
+
+# Run processes
+for p in processes:
+    p.start()
+
+# Exit the completed processes
+for p in processes:
+    p.join()
+
+# Get process results from the output queue
+results = [output.get() for p in processes]
+
+print(results)
